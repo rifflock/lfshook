@@ -3,10 +3,14 @@ package lfshook
 
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
 	"log"
 	"os"
+
+	"github.com/Sirupsen/logrus"
 )
+
+// We are logging to file, strip colors to make the output more readable
+var txtFormatter = &logrus.TextFormatter{DisableColors: true}
 
 // Map for linking a log level to a log file
 // Multiple levels may share a file, but multiple files may not be used for one level
@@ -52,7 +56,16 @@ func (hook *lfsHook) Fire(entry *logrus.Entry) error {
 		return err
 	}
 	defer fd.Close()
+
+	// switch to TextFormatter
+	formatter := entry.Logger.Formatter
+	entry.Logger.Formatter = txtFormatter
+
 	msg, err = entry.String()
+
+	// assign back original formatter
+	entry.Logger.Formatter = formatter
+
 	if err != nil {
 		log.Println("failed to generate string for entry:", err)
 		return err
