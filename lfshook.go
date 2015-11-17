@@ -6,6 +6,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"log"
 	"os"
+	"sync"
 )
 
 // Map for linking a log level to a log file
@@ -16,6 +17,7 @@ type PathMap map[logrus.Level]string
 type lfsHook struct {
 	paths  PathMap
 	levels []logrus.Level
+	lock   *sync.Mutex
 }
 
 // Given a map with keys equal to log levels.
@@ -24,6 +26,7 @@ type lfsHook struct {
 func NewHook(levelMap PathMap) *lfsHook {
 	hook := &lfsHook{
 		paths: levelMap,
+		lock: new(sync.Mutex),
 	}
 	for level, _ := range levelMap {
 		hook.levels = append(hook.levels, level)
@@ -41,6 +44,10 @@ func (hook *lfsHook) Fire(entry *logrus.Entry) error {
 		err  error
 		ok   bool
 	)
+	
+	hook.lock.Lock()        
+        defer hook.lock.Unlock()
+        
 	if path, ok = hook.paths[entry.Level]; !ok {
 		err = fmt.Errorf("no file provided for loglevel: %d", entry.Level)
 		log.Println(err.Error())
