@@ -3,9 +3,10 @@ package lfshook
 
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
 	"log"
 	"os"
+
+	"github.com/visenze/logrus"
 )
 
 // Map for linking a log level to a log file
