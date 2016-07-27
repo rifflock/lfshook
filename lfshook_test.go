@@ -15,7 +15,6 @@ const expectedMsg = "This is the expected test message."
 func TestLogEntryWritten(t *testing.T) {
 	log := logrus.New()
 	// The colors were messing with the regexp so I turned them off.
-	log.Formatter = &logrus.TextFormatter{DisableColors: true}
 	tmpfile, err := ioutil.TempFile("", "test_lfshook")
 	if err != nil {
 		t.Errorf("Unable to generate logfile due to err: %s", err)
