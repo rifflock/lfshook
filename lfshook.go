@@ -9,6 +9,9 @@ import (
 	"sync"
 )
 
+// We are logging to file, strip colors to make the output more readable
+var txtFormatter = &logrus.TextFormatter{DisableColors: true}
+
 // Map for linking a log level to a log file
 // Multiple levels may share a file, but multiple files may not be used for one level
 type PathMap map[logrus.Level]string
@@ -26,7 +29,7 @@ type lfsHook struct {
 func NewHook(levelMap PathMap) *lfsHook {
 	hook := &lfsHook{
 		paths: levelMap,
-		lock: new(sync.Mutex),
+		lock:  new(sync.Mutex),
 	}
 	for level, _ := range levelMap {
 		hook.levels = append(hook.levels, level)
@@ -44,10 +47,10 @@ func (hook *lfsHook) Fire(entry *logrus.Entry) error {
 		err  error
 		ok   bool
 	)
-	
-	hook.lock.Lock()        
-        defer hook.lock.Unlock()
-        
+
+	hook.lock.Lock()
+	defer hook.lock.Unlock()
+
 	if path, ok = hook.paths[entry.Level]; !ok {
 		err = fmt.Errorf("no file provided for loglevel: %d", entry.Level)
 		log.Println(err.Error())
@@ -59,7 +62,16 @@ func (hook *lfsHook) Fire(entry *logrus.Entry) error {
 		return err
 	}
 	defer fd.Close()
+
+	// switch to TextFormatter
+	formatter := entry.Logger.Formatter
+	entry.Logger.Formatter = txtFormatter
+	defer func() {
+		// assign back original formatter
+		entry.Logger.Formatter = formatter
+	}()
 	msg, err = entry.String()
+
 	if err != nil {
 		log.Println("failed to generate string for entry:", err)
 		return err
