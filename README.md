@@ -15,7 +15,7 @@ func NewLogger( config map[string]interface{} ) *log.Logger {
 	if Log != nil {
 		return Log
 	}
-	
+
 	Log = log.New()
 	Log.Formatter = new(log.JSONFormatter)
 	Log.Hooks.Add(lfshook.NewHook(lfshook.PathMap{
@@ -24,6 +24,18 @@ func NewLogger( config map[string]interface{} ) *log.Logger {
 	}))
 	return Log
 }
+```
+
+### Specifying a different formatter
+By default lfshook uses TextFormatter with colors disabled. If you wish to specify
+a different logger you can do so with the `SetFormatter()` method.
+```go
+hook := lfshook.NewHook(lfshook.PathMap{
+	logger.InfoLevel : filename,
+	logger.ErrorLevel : filename,
+})
+hook.SetFormatter(&logger.JSONFormatter{})
+Log.AddHook(hook)
 ```
 
 ### Note:

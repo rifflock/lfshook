@@ -21,6 +21,7 @@ type lfsHook struct {
 	paths  PathMap
 	levels []logrus.Level
 	lock   *sync.Mutex
+	formatter logrus.Formatter
 }
 
 // Given a map with keys equal to log levels.
@@ -30,11 +31,22 @@ func NewHook(levelMap PathMap) *lfsHook {
 	hook := &lfsHook{
 		paths: levelMap,
 		lock:  new(sync.Mutex),
+		formatter: txtFormatter,
 	}
 	for level, _ := range levelMap {
 		hook.levels = append(hook.levels, level)
 	}
 	return hook
+}
+
+func (hook *lfsHook) SetFormatter(formatter logrus.Formatter) {
+	hook.formatter = formatter
+
+	switch hook.formatter.(type) {
+		case *logrus.TextFormatter:
+			textFormatter := hook.formatter.(*logrus.TextFormatter)
+			textFormatter.DisableColors = true
+	}
 }
 
 // Open the file, write to the file, close the file.
@@ -63,13 +75,14 @@ func (hook *lfsHook) Fire(entry *logrus.Entry) error {
 	}
 	defer fd.Close()
 
-	// switch to TextFormatter
+	// use our formatter
 	formatter := entry.Logger.Formatter
-	entry.Logger.Formatter = txtFormatter
+	entry.Logger.Formatter = hook.formatter
 	defer func() {
 		// assign back original formatter
 		entry.Logger.Formatter = formatter
 	}()
+
 	msg, err = entry.String()
 
 	if err != nil {
