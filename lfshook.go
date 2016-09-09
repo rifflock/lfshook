@@ -63,13 +63,18 @@ func (hook *lfsHook) Fire(entry *logrus.Entry) error {
 	}
 	defer fd.Close()
 
-	// switch to TextFormatter
-	formatter := entry.Logger.Formatter
-	entry.Logger.Formatter = txtFormatter
-	defer func() {
-		// assign back original formatter
-		entry.Logger.Formatter = formatter
-	}()
+	// only strip colours if we are using a TextFormatter
+	switch entry.Logger.Formatter.(type) {
+	case *logrus.TextFormatter:
+		// swap to TextFormatter
+		formatter := entry.Logger.Formatter
+		entry.Logger.Formatter = txtFormatter
+		defer func() {
+			// assign back original formatter
+			entry.Logger.Formatter = formatter
+		}()
+	}
+
 	msg, err = entry.String()
 
 	if err != nil {
