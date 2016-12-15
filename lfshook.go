@@ -3,10 +3,10 @@ package lfshook
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"sync"
-	"io"
 
 	"github.com/Sirupsen/logrus"
 )
@@ -23,10 +23,10 @@ type WriterMap map[logrus.Level]io.Writer
 
 // Hook to handle writing to local log files.
 type lfsHook struct {
-	paths  PathMap
-	writer WriterMap
-	levels []logrus.Level
-	lock   *sync.Mutex
+	paths     PathMap
+	writer    WriterMap
+	levels    []logrus.Level
+	lock      *sync.Mutex
 	formatter logrus.Formatter
 }
 
@@ -35,7 +35,7 @@ type lfsHook struct {
 // We can also write to the same file for all levels. They just need to be specified.
 func NewHook(levelMap interface{}) *lfsHook {
 	hook := &lfsHook{
-		lock:  new(sync.Mutex),
+		lock:      new(sync.Mutex),
 		formatter: txtFormatter,
 	}
 
@@ -62,9 +62,9 @@ func (hook *lfsHook) SetFormatter(formatter logrus.Formatter) {
 	hook.formatter = formatter
 
 	switch hook.formatter.(type) {
-		case *logrus.TextFormatter:
-			textFormatter := hook.formatter.(*logrus.TextFormatter)
-			textFormatter.DisableColors = true
+	case *logrus.TextFormatter:
+		textFormatter := hook.formatter.(*logrus.TextFormatter)
+		textFormatter.DisableColors = true
 	}
 }
 
@@ -93,9 +93,9 @@ func (hook *lfsHook) Fire(entry *logrus.Entry) error {
 // Write a log line to an io.Writer
 func (hook *lfsHook) ioWrite(entry *logrus.Entry) error {
 	var (
-		msg  string
-		err  error
-		ok   bool
+		msg string
+		err error
+		ok  bool
 	)
 
 	hook.lock.Lock()
@@ -135,7 +135,7 @@ func (hook *lfsHook) fileWrite(entry *logrus.Entry) error {
 		log.Println(err.Error())
 		return err
 	}
-	fd, err = os.OpenFile(path, os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0666)
+	fd, err = os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
 		log.Println("failed to open logfile:", path, err)
 		return err
