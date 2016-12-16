@@ -54,7 +54,7 @@ func NewHook(levelMap interface{}) *lfsHook {
 		}
 		break
 	default:
-		log.Println(fmt.Errorf("unsupported level map type: %s", reflect.TypeOf(levelMap)))
+		panic(fmt.Sprintf("unsupported level map type: %s", reflect.TypeOf(levelMap)))
 	}
 
 	return hook
