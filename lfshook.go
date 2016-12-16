@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"reflect"
 	"sync"
 
 	"github.com/Sirupsen/logrus"
@@ -52,6 +53,8 @@ func NewHook(levelMap interface{}) *lfsHook {
 			hook.levels = append(hook.levels, level)
 		}
 		break
+	default:
+		log.Println(fmt.Errorf("unsupported level map type: %s", reflect.TypeOf(levelMap)))
 	}
 
 	return hook
