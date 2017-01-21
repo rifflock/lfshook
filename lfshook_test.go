@@ -1,14 +1,15 @@
 package lfshook
 
 import (
+	"bytes"
 	"github.com/Sirupsen/logrus"
 	"io/ioutil"
 	"os"
-	"regexp"
 	"testing"
 )
 
 const expectedMsg = "This is the expected test message."
+const unexpectedMsg = "This message should not be logged."
 
 // Tests that writing to a tempfile log works.
 // Matches the 'msg' of the output and deletes the tempfile.
@@ -30,10 +31,19 @@ func TestLogEntryWritten(t *testing.T) {
 	log.Hooks.Add(hook)
 
 	log.Info(expectedMsg)
+	log.Warn(unexpectedMsg)
 
-	if contents, err := ioutil.ReadAll(tmpfile); err != nil {
+	contents, err := ioutil.ReadAll(tmpfile)
+	if err != nil {
 		t.Errorf("Error while reading from tmpfile: %s", err)
-	} else if matched, err := regexp.Match("msg=\""+expectedMsg+"\"", contents); err != nil || !matched {
+	}
+
+	if !bytes.Contains(contents, []byte("msg=\""+expectedMsg+"\"")) {
 		t.Errorf("Message read (%s) doesnt match message written (%s) for file: %s", contents, expectedMsg, fname)
 	}
+
+	if bytes.Contains(contents, []byte("msg=\""+unexpectedMsg+"\"")) {
+		t.Errorf("Message read (%s) contains message written (%s) for file: %s", contents, unexpectedMsg, fname)
+	}
+
 }
