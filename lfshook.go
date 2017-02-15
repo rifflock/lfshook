@@ -74,17 +74,13 @@ func (hook *lfsHook) SetFormatter(formatter logrus.Formatter) {
 // Open the file, write to the file, close the file.
 // Whichever user is running the function needs write permissions to the file or directory if the file does not yet exist.
 func (hook *lfsHook) Fire(entry *logrus.Entry) error {
-	// only modify Formatter if we are using a TextFormatter so we can strip colors
-	switch entry.Logger.Formatter.(type) {
-	case *logrus.TextFormatter:
-		// swap to colorless TextFormatter
-		formatter := entry.Logger.Formatter
-		entry.Logger.Formatter = txtFormatter
-		defer func() {
-			// assign back original formatter
-			entry.Logger.Formatter = formatter
-		}()
-	}
+	// use our formatter
+	formatter := entry.Logger.Formatter
+	entry.Logger.Formatter = hook.formatter
+	defer func() {
+		// assign back original formatter
+		entry.Logger.Formatter = formatter
+	}()
 
 	if hook.writer != nil {
 		return hook.ioWrite(entry)
