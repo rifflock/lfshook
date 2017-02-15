@@ -105,7 +105,7 @@ func (hook *lfsHook) ioWrite(entry *logrus.Entry) error {
 		log.Println("failed to generate string for entry:", err)
 		return err
 	}
-	_, err = hook.writer[entry.Level].Write([]byte(msg))
+	_, err = hook.writer[entry.Level].Write(msg)
 	return err
 }
 
