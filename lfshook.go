@@ -74,14 +74,6 @@ func (hook *lfsHook) SetFormatter(formatter logrus.Formatter) {
 // Open the file, write to the file, close the file.
 // Whichever user is running the function needs write permissions to the file or directory if the file does not yet exist.
 func (hook *lfsHook) Fire(entry *logrus.Entry) error {
-	// use our formatter
-	formatter := entry.Logger.Formatter
-	entry.Logger.Formatter = hook.formatter
-	defer func() {
-		// assign back original formatter
-		entry.Logger.Formatter = formatter
-	}()
-
 	if hook.writer != nil {
 		return hook.ioWrite(entry)
 	} else {
@@ -92,7 +84,7 @@ func (hook *lfsHook) Fire(entry *logrus.Entry) error {
 // Write a log line to an io.Writer
 func (hook *lfsHook) ioWrite(entry *logrus.Entry) error {
 	var (
-		msg string
+		msg []byte
 		err error
 		ok  bool
 	)
@@ -106,7 +98,8 @@ func (hook *lfsHook) ioWrite(entry *logrus.Entry) error {
 		return err
 	}
 
-	msg, err = entry.String()
+	// use our formatter instead of entry.String()
+	msg, err = hook.formatter.Format(entry)
 
 	if err != nil {
 		log.Println("failed to generate string for entry:", err)
@@ -121,7 +114,7 @@ func (hook *lfsHook) fileWrite(entry *logrus.Entry) error {
 	var (
 		fd   *os.File
 		path string
-		msg  string
+		msg  []byte
 		err  error
 		ok   bool
 	)
@@ -141,13 +134,14 @@ func (hook *lfsHook) fileWrite(entry *logrus.Entry) error {
 	}
 	defer fd.Close()
 
-	msg, err = entry.String()
+	// use our formatter instead of entry.String()
+	msg, err = hook.formatter.Format(entry)
 
 	if err != nil {
 		log.Println("failed to generate string for entry:", err)
 		return err
 	}
-	fd.WriteString(msg)
+	fd.Write(msg)
 	return nil
 }
 
