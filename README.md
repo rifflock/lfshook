@@ -38,12 +38,11 @@ In combination with pakages like [go-file-rotatelogs](https://github.com/lestrra
 
   path := "/var/log/go.log"
   writer := rotatelogs.NewRotateLogs(
-    path + ".%Y%m%d%H%M", // rotation pattern
+    path + ".%Y%m%d%H%M",
+    rotatelogs.WithLinkName(path),
+    rotatelogs.WithMaxAge(time.Duration(86400) * time.Second),
+    rotatelogs.WithRotationTime(time.Duration(604800) * time.Second),
   )
-  writer.LinkName = path
-  writer.RotationTime = time.Duration(86400) * time.Second // rotate once a day
-  writer.MaxAge = time.Duration(604800) * time.Second // keep one week of log files
-  writer.Offset = 0
 
   log.Hooks.Add(lfshook.NewHook(lfshook.WriterMap{
     logrus.InfoLevel: writer,
