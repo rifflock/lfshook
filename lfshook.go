@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // We are logging to file, strip colors to make the output more readable
