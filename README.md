@@ -17,7 +17,7 @@ func NewLogger( config map[string]interface{} ) *log.Logger {
 	}
 
 	Log = log.New()
-	Log.Formatter = new(log.JSONFormatter)
+	Log.SetFormatter(&log.JSONFormatter{})
 	Log.Hooks.Add(lfshook.NewHook(lfshook.PathMap{
 		log.InfoLevel : "/var/log/info.log",
 		log.ErrorLevel : "/var/log/error.log",
