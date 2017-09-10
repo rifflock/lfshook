@@ -1,6 +1,6 @@
 # Local Filesystem Hook for Logrus
 
-Sometimes developers like to write directly to a file on the filesystem. This is a hook for [logrus](https://github.com/Sirupsen/logrus) designed to allow users to do just that.  The log levels are dynamic at instanciation of the hook, so it is capable of logging at some or all levels.
+Sometimes developers like to write directly to a file on the filesystem. This is a hook for [logrus](https://github.com/Sirupsen/logrus) designed to allow users to do just that.  The log levels are dynamic at instantiation of the hook, so it is capable of logging at some or all levels.
 
 ## Example
 ```go
