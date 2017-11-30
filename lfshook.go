@@ -13,7 +13,7 @@ import (
 )
 
 // We are logging to file, strip colors to make the output more readable
-var txtFormatter = &logrus.TextFormatter{DisableColors: true}
+var defaultFormatter = &logrus.TextFormatter{DisableColors: true}
 
 // Map for linking a log level to a log file
 // Multiple levels may share a file, but multiple files may not be used for one level
@@ -34,10 +34,16 @@ type lfsHook struct {
 // Given a map with keys equal to log levels.
 // We can generate our levels handled on the fly, and write to a specific file for each level.
 // We can also write to the same file for all levels. They just need to be specified.
-func NewHook(levelMap interface{}) *lfsHook {
+func NewHook(levelMap interface{}, userFormatter logrus.Formatter) *lfsHook {
+	var formatter logrus.Formatter
+	if userFormatter != nil {
+		formatter = userFormatter
+	} else {
+		formatter = defaultFormatter
+	}
 	hook := &lfsHook{
 		lock:      new(sync.Mutex),
-		formatter: txtFormatter,
+		formatter: formatter,
 	}
 
 	switch levelMap.(type) {
