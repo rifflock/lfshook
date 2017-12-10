@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"reflect"
 	"sync"
 
@@ -133,6 +134,10 @@ func (hook *lfsHook) fileWrite(entry *logrus.Entry) error {
 		log.Println(err.Error())
 		return err
 	}
+
+	dir := filepath.Dir(path)
+	os.MkdirAll(dir, os.ModePerm)
+
 	fd, err = os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
 		log.Println("failed to open logfile:", path, err)
