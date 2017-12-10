@@ -40,18 +40,12 @@ type LfsHook struct {
 // NewHook returns new LFS hook.
 // Accepts WriterMap or PathMap in the place of levelMap.
 // If using WriterMap, user is responsible for closing the used io.Writer.
-func NewHook(levelMap interface{}, userFormatter logrus.Formatter) *LfsHook {
-	var formatter logrus.Formatter
-	if userFormatter != nil {
-		formatter = userFormatter
-	} else {
-		formatter = defaultFormatter
+func NewHook(levelMap interface{}, formatter logrus.Formatter) *LfsHook {
+	hook := &LfsHook{
+		lock: new(sync.Mutex),
 	}
 
-	hook := &LfsHook{
-		lock:      new(sync.Mutex),
-		formatter: formatter,
-	}
+	hook.SetFormatter(formatter)
 
 	switch levelMap.(type) {
 	case nil:
@@ -78,13 +72,17 @@ func NewHook(levelMap interface{}, userFormatter logrus.Formatter) *LfsHook {
 // SetFormatter sets the format that will be used by hook.
 // If using text formatter, this method will disable color output to make the log file more readable.
 func (hook *LfsHook) SetFormatter(formatter logrus.Formatter) {
-	hook.formatter = formatter
-
-	switch hook.formatter.(type) {
-	case *logrus.TextFormatter:
-		textFormatter := hook.formatter.(*logrus.TextFormatter)
-		textFormatter.DisableColors = true
+	if formatter == nil {
+		formatter = defaultFormatter
+	} else {
+		switch formatter.(type) {
+		case *logrus.TextFormatter:
+			textFormatter := formatter.(*logrus.TextFormatter)
+			textFormatter.DisableColors = true
+		}
 	}
+
+	hook.formatter = formatter
 }
 
 // SetDefaultPath sets default path for levels that don't have any defined output path.
