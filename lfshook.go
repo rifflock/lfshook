@@ -3,14 +3,13 @@ package lfshook
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"reflect"
 	"sync"
-
-	"github.com/sirupsen/logrus"
 )
 
 // We are logging to file, strip colors to make the output more readable
@@ -26,10 +25,15 @@ type WriterMap map[logrus.Level]io.Writer
 // Hook to handle writing to local log files.
 type lfsHook struct {
 	paths     PathMap
-	writer    WriterMap
+	writers   WriterMap
 	levels    []logrus.Level
 	lock      *sync.Mutex
 	formatter logrus.Formatter
+
+	defaultPath      string
+	defaultWriter    io.Writer
+	hasDefaultPath   bool
+	hasDefaultWriter bool
 }
 
 // Given a map with keys equal to log levels.
@@ -48,6 +52,8 @@ func NewHook(levelMap interface{}, userFormatter logrus.Formatter) *lfsHook {
 	}
 
 	switch levelMap.(type) {
+	case nil:
+		break
 	case PathMap:
 		hook.paths = levelMap.(PathMap)
 		for level := range levelMap.(PathMap) {
@@ -55,7 +61,7 @@ func NewHook(levelMap interface{}, userFormatter logrus.Formatter) *lfsHook {
 		}
 		break
 	case WriterMap:
-		hook.writer = levelMap.(WriterMap)
+		hook.writers = levelMap.(WriterMap)
 		for level := range levelMap.(WriterMap) {
 			hook.levels = append(hook.levels, level)
 		}
@@ -78,31 +84,48 @@ func (hook *lfsHook) SetFormatter(formatter logrus.Formatter) {
 	}
 }
 
+// SetDefaultPath sets default path for levels that don't have any defined output path.
+func (hook *lfsHook) SetDefaultPath(defaultPath string) {
+	hook.defaultPath = defaultPath
+	hook.hasDefaultPath = true
+}
+
+// SetDefaultWriter sets default writer for levels that don't have any defined writer.
+func (hook *lfsHook) SetDefaultWriter(defaultWriter io.Writer) {
+	hook.defaultWriter = defaultWriter
+	hook.hasDefaultWriter = true
+}
+
 // Open the file, write to the file, close the file.
 // Whichever user is running the function needs write permissions to the file or directory if the file does not yet exist.
 func (hook *lfsHook) Fire(entry *logrus.Entry) error {
-	if hook.writer != nil {
+	if hook.writers != nil || hook.hasDefaultWriter {
 		return hook.ioWrite(entry)
-	} else {
+	} else if hook.paths != nil || hook.hasDefaultPath {
 		return hook.fileWrite(entry)
 	}
+
+	return nil
 }
 
 // Write a log line to an io.Writer
 func (hook *lfsHook) ioWrite(entry *logrus.Entry) error {
 	var (
-		msg []byte
-		err error
-		ok  bool
+		writer io.Writer
+		msg    []byte
+		err    error
+		ok     bool
 	)
 
 	hook.lock.Lock()
 	defer hook.lock.Unlock()
 
-	if _, ok = hook.writer[entry.Level]; !ok {
-		err = fmt.Errorf("no writer provided for loglevel: %d", entry.Level)
-		log.Println(err.Error())
-		return err
+	if writer, ok = hook.writers[entry.Level]; !ok {
+		if hook.hasDefaultWriter {
+			writer = hook.defaultWriter
+		} else {
+			return nil
+		}
 	}
 
 	// use our formatter instead of entry.String()
@@ -112,7 +135,7 @@ func (hook *lfsHook) ioWrite(entry *logrus.Entry) error {
 		log.Println("failed to generate string for entry:", err)
 		return err
 	}
-	_, err = hook.writer[entry.Level].Write(msg)
+	_, err = writer.Write(msg)
 	return err
 }
 
@@ -130,9 +153,11 @@ func (hook *lfsHook) fileWrite(entry *logrus.Entry) error {
 	defer hook.lock.Unlock()
 
 	if path, ok = hook.paths[entry.Level]; !ok {
-		err = fmt.Errorf("no file provided for loglevel: %d", entry.Level)
-		log.Println(err.Error())
-		return err
+		if hook.hasDefaultPath {
+			path = hook.defaultPath
+		} else {
+			return nil
+		}
 	}
 
 	dir := filepath.Dir(path)
@@ -156,7 +181,7 @@ func (hook *lfsHook) fileWrite(entry *logrus.Entry) error {
 	return nil
 }
 
-// Return configured log levels
+// Levels returns configured log levels.
 func (hook *lfsHook) Levels() []logrus.Level {
-	return hook.levels
+	return logrus.AllLevels
 }
