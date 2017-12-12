@@ -23,18 +23,19 @@ func NewLogger() *logrus.Logger {
 		logrus.ErrorLevel: "/var/log/error.log",
 	}
 
-	Log = logrus.New()
+	
 	Log.Hooks.Add(lfshook.NewHook(
 		pathMap,
 		&logrus.JSONFormatter{},
 	))
-
 	return Log
 }
 ```
 
 ### Formatters
 `lfshook` will strip colors from any `TextFormatter` type formatters when writing to local file, because the color codes don't look great in file.
+
+If no formatter is provided via `lfshook.NewHook`, a default text formatter will be used.
 
 ### Log rotation
 In order to enable automatic log rotation it's possible to provide an io.Writer instead of the path string of a log file.
