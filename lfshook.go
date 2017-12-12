@@ -38,32 +38,36 @@ type LfsHook struct {
 }
 
 // NewHook returns new LFS hook.
-// Accepts WriterMap or PathMap in the place of levelMap.
-// If using WriterMap, user is responsible for closing the used io.Writer.
-func NewHook(levelMap interface{}, formatter logrus.Formatter) *LfsHook {
+// Output can be a string, io.Writer, WriterMap or PathMap.
+// If using io.Writer or WriterMap, user is responsible for closing the used io.Writer.
+func NewHook(output interface{}, formatter logrus.Formatter) *LfsHook {
 	hook := &LfsHook{
 		lock: new(sync.Mutex),
 	}
 
 	hook.SetFormatter(formatter)
 
-	switch levelMap.(type) {
-	case nil:
+	switch output.(type) {
+	case string:
+		hook.SetDefaultPath(output.(string))
+		break
+	case io.Writer:
+		hook.SetDefaultWriter(output.(io.Writer))
 		break
 	case PathMap:
-		hook.paths = levelMap.(PathMap)
-		for level := range levelMap.(PathMap) {
+		hook.paths = output.(PathMap)
+		for level := range output.(PathMap) {
 			hook.levels = append(hook.levels, level)
 		}
 		break
 	case WriterMap:
-		hook.writers = levelMap.(WriterMap)
-		for level := range levelMap.(WriterMap) {
+		hook.writers = output.(WriterMap)
+		for level := range output.(WriterMap) {
 			hook.levels = append(hook.levels, level)
 		}
 		break
 	default:
-		panic(fmt.Sprintf("unsupported level map type: %s", reflect.TypeOf(levelMap)))
+		panic(fmt.Sprintf("unsupported level map type: %v", reflect.TypeOf(output)))
 	}
 
 	return hook
